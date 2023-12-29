@@ -1,0 +1,38 @@
+/personal-finance-manager
+|-- /app
+|   |-- main.py              # Entry point to the application
+|   |-- /api                 # Contains all the endpoint definitions
+|   |   |-- __init__.py
+|   |   |-- deps.py          # Dependency-related utilities
+|   |   `-- endpoints        # Separate modules for each resource (users, transactions, etc.)
+|   |       |-- __init__.py
+|   |       |-- user.py
+|   |       `-- transaction.py
+|   |
+|   |-- /core                # Application configuration, startup events, etc.
+|   |   |-- __init__.py
+|   |   `-- config.py
+|   |
+|   |-- /crud                # CRUD utils (create, read, update, delete)
+|   |   |-- __init__.py
+|   |   |-- crud_user.py
+|   |   `-- crud_transaction.py
+|   |
+|   |-- /models              # Database models
+|   |   |-- __init__.py
+|   |   |-- user.py
+|   |   `-- transaction.py
+|   |
+|   |-- /schemas             # Pydantic models for request and response data
+|   |   |-- __init__.py
+|   |   |-- user.py
+|   |   `-- transaction.py
+|   |
+|   `-- /utils               # Utility scripts and helper functions
+|       |-- __init__.py
+|       `-- security.py
+|
+`-- /tests                   # Test modules
+    |-- __init__.py
+        `-- test_api.py
+
