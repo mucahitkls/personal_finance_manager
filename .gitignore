@@ -1,4 +1,6 @@
 # folder
+*env
+pfm_env
 venv
 __pycache__
 .idea
@@ -10,4 +12,4 @@ __pycache__
 .config
 *.config
 *.env
-
+.gitignore
