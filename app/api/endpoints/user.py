@@ -177,3 +177,9 @@ async def delete_user(user_id: int) -> Optional[user_schema.UserBase]:
             detail="An unexpected error occurred while deleting the user."
         )
 
+
+@router.put("/{user_id}", response_model=user_schema.UserBase)
+async def update_user(user_id: int, user: user_schema.UserCreate) -> Optional[user_schema.UserBase]:
+
+
+    pass
