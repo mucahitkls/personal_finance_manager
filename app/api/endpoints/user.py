@@ -1,11 +1,15 @@
+import hashlib
+from mongoengine.errors import DoesNotExist
 from fastapi import APIRouter, HTTPException, status
+from jose import JWTError
 from app.schemas import user as user_schema
+from app.schemas.token import Token
 from app.crud import crud_user
 from app.models import user as user_model
-from app.utils.logger import setup_logger
+from app.utils import security, logger
 
 router = APIRouter()
-logger = setup_logger()
+logger = logger.setup_logger()
 
 
 @router.post("/register", response_model=user_schema.UserBase)
@@ -40,5 +44,36 @@ async def create_user(user: user_schema.UserCreate):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred"
+        )
+
+
+@router.post("/login")
+async def login(user: user_schema.UserLogin) -> Token:
+    try:
+        user_obj = security.authenticate_user(user.username, user.password)
+        if not user_obj:
+            logger.info(f"Login attempt for username: {user.username}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        access_token = security.create_access_token(data={"sub": user.username})
+        logger.info(f"User {user_obj.username} logged in successfully.")
+        return Token(access_token=access_token, token_type="bearer")
+
+    except DoesNotExist:
+        logger.warning(f"User not found: {user.username}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    except JWTError as jwt_error:
+        logger.error(f"JWT Error: {jwt_error}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error processing login request."
         )
 

@@ -9,6 +9,9 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+class UserLogin(UserCreate):
+    pass
+
 
 class UserInDB(UserBase):
     hashed_password: str

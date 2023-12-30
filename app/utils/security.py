@@ -86,7 +86,7 @@ def decode_token(token: str) -> Optional[dict]:
         return None
 
 
-def authenticate_user(username: str, password: str) -> bool | Any:
+def authenticate_user(username: str, password: str) -> bool | User:
     """
     Authenticate a user by username and password.
     :param username:
