@@ -5,7 +5,6 @@ from jose import JWTError
 from app.schemas import user as user_schema
 from app.schemas.token import Token
 from app.crud import crud_user
-from app.models import user as user_model
 from app.utils import security, logger
 
 router = APIRouter()
@@ -49,6 +48,20 @@ async def create_user(user: user_schema.UserCreate):
 
 @router.post("/login")
 async def login(user: user_schema.UserLogin) -> Token:
+    """
+            Authenticate a user and provide an access token for future requests.
+            This endpoint verifies the user's credentials and, if valid, generates a new access token for the user.
+
+            Args:
+                user (UserLogin): The user's login information including username and password.
+
+            Raises:
+                HTTPException: 401 error if the username or password is incorrect.
+
+            Returns:
+                Token: An object containing the access token and token type.
+    """
+
     try:
         user_obj = security.authenticate_user(user.username, user.password)
         if not user_obj:
