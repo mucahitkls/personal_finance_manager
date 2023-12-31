@@ -1,9 +1,9 @@
 from typing import List, Optional
 from mongoengine.errors import DoesNotExist
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status
 from jose import JWTError
 from app.schemas import user as user_schema
-from app.schemas.token import Token, TokenData
+from app.schemas.token import Token
 from app.crud import crud_user
 from app.utils import security, logger
 
@@ -97,7 +97,7 @@ async def login(user: user_schema.UserLogin) -> Token:
 
 
 @router.get("/", response_model=List[user_schema.UserBase])
-async def read_users(current_user: TokenData = Depends(security.get_current_active_admin)):
+async def read_users():
     try:
         users = crud_user.get_all_users()
         return users
@@ -118,7 +118,7 @@ async def read_users(current_user: TokenData = Depends(security.get_current_acti
 
 
 @router.get("/{user_id}", response_model=user_schema.UserBase)
-async def read_user(user_id: int, current_user: TokenData = Depends(security.get_current_active_admin)):
+async def read_user(user_id: int):
     try:
         user = crud_user.get_user_by_id(user_id=user_id)
         return user
@@ -134,7 +134,7 @@ async def read_user(user_id: int, current_user: TokenData = Depends(security.get
 
 
 @router.delete("/{user_id}", response_model=user_schema.UserBase)
-async def delete_user(user_id: int, current_user: TokenData = Depends(security.get_current_active_admin)) -> Optional[user_schema.UserBase]:
+async def delete_user(user_id: int) -> Optional[user_schema.UserBase]:
     """
         Deletes a user from the database by their user ID.
 
@@ -146,7 +146,6 @@ async def delete_user(user_id: int, current_user: TokenData = Depends(security.g
 
         Raises:
             HTTPException: With appropriate status code and detail message when errors occur.
-            :param current_user:
     """
     try:
         db_user = crud_user.get_user_by_id(user_id=user_id)
@@ -180,32 +179,7 @@ async def delete_user(user_id: int, current_user: TokenData = Depends(security.g
 
 
 @router.put("/{user_id}", response_model=user_schema.UserBase)
-async def update_user(user_id: int, user: user_schema.UserCreate, current_user: TokenData = Depends(security.get_current_active_admin)) -> Optional[user_schema.UserBase]:
-    try:
-        updated_user = crud_user.update_user(user_id=user_id, user_data=user)
-        if not updated_user:
-            logger.info(f"User with ID {user_id} not found or deleted already")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
-        if updated_user:
-            logger.info(f"User with ID {user_id} has been updated")
-            return updated_user
+async def update_user(user_id: int, user: user_schema.UserCreate) -> Optional[user_schema.UserBase]:
 
-        else:
-            logger.warning(f"Failed to update user with ID {user_id}. User may no exist.")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found or already deleted."
-            )
 
-    except HTTPException as http_exc:
-        raise http_exc
-
-    except Exception as e:
-        logger.error(f"Unexpected error occurred while updating user with ID {user_id}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred while updating the user."
-        )
+    pass
