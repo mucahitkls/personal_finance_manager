@@ -1,9 +1,10 @@
 from typing import List, Optional
-from mongoengine.errors import DoesNotExist
-from fastapi import APIRouter, HTTPException, status
+from mongoengine.errors import DoesNotExist, NotUniqueError, ValidationError
+from fastapi import APIRouter, HTTPException, status, Depends
 from jose import JWTError
+from app.models.user import User
 from app.schemas import user as user_schema
-from app.schemas.token import Token
+from app.schemas.token import Token, TokenData
 from app.crud import crud_user
 from app.utils import security, logger
 
@@ -97,7 +98,7 @@ async def login(user: user_schema.UserLogin) -> Token:
 
 
 @router.get("/", response_model=List[user_schema.UserBase])
-async def read_users():
+async def read_users(current_user: TokenData = Depends(security.get_current_active_admin)):
     try:
         users = crud_user.get_all_users()
         return users
@@ -118,7 +119,7 @@ async def read_users():
 
 
 @router.get("/{user_id}", response_model=user_schema.UserBase)
-async def read_user(user_id: int):
+async def read_user(user_id: int, current_user: TokenData = Depends(security.get_current_active_admin)):
     try:
         user = crud_user.get_user_by_id(user_id=user_id)
         return user
@@ -134,7 +135,7 @@ async def read_user(user_id: int):
 
 
 @router.delete("/{user_id}", response_model=user_schema.UserBase)
-async def delete_user(user_id: int) -> Optional[user_schema.UserBase]:
+async def delete_user(user_id: int, current_user: TokenData = Depends(security.get_current_active_admin)) -> Optional[user_schema.UserBase]:
     """
         Deletes a user from the database by their user ID.
 
@@ -179,7 +180,41 @@ async def delete_user(user_id: int) -> Optional[user_schema.UserBase]:
 
 
 @router.put("/{user_id}", response_model=user_schema.UserBase)
-async def update_user(user_id: int, user: user_schema.UserCreate) -> Optional[user_schema.UserBase]:
+async def update_user(user_id: int, user_data: user_schema.UserCreate, current_user: TokenData = Depends(security.get_current_active_admin)) -> Optional[user_schema.UserBase]:
+    """
+        Updates an existing user's details in the database.
 
+        Args:
+            user_id (int): The ID of the user to update.
+            user_data (UserCreate): The updated user data.
 
-    pass
+        Returns:
+            Optional[UserBase]: The updated user's information if the update was successful, None otherwise.
+    """
+    try:
+        user_in_db = User.objects(id=user_id).first()
+        if not user_in_db:
+            logger.info(f"User with ID {user_id} not found")
+            return None
+        user_in_db.update(
+            hashed_password=security.hash_plain_password(user_data.password),
+            email=user_data.email,
+            username=user_data.username
+        )
+        logger.info(f"User with ID {user_id} has been updated.")
+
+        updated_user = User.objects(id=user_id).first()
+        return user_schema.UserBase(**updated_user.to_mong().to_dict())
+
+    except ValidationError as e:
+        logger.error(f"Validation Error: {e}")
+        # Todo: handle with custom exception
+
+    except NotUniqueError as e:
+        logger.error(f"Unique Constraint Error: {e}")
+        # Todo: handle cases where the update might violate a unique constraint.
+
+    except Exception as e:
+        logger.error(f"Unexpected error occurred while updating user with ID {user_id}: {e}")
+        # Todo: handle any other unexpected errors
+    return None

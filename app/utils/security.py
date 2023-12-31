@@ -135,3 +135,12 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
     if user is None:
         raise credentials_exception
     return user
+
+
+async def get_current_active_admin(current_user: TokenData = Depends(get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="The user doesn't have enough privileges"
+        )
+    return current_user
