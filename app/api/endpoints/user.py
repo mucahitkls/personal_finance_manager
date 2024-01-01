@@ -192,19 +192,8 @@ async def update_user(user_id: int, user_data: user_schema.UserCreate, current_u
             Optional[UserBase]: The updated user's information if the update was successful, None otherwise.
     """
     try:
-        user_in_db = User.objects(id=user_id).first()
-        if not user_in_db:
-            logger.info(f"User with ID {user_id} not found")
-            return None
-        user_in_db.update(
-            hashed_password=security.hash_plain_password(user_data.password),
-            email=user_data.email,
-            username=user_data.username
-        )
-        logger.info(f"User with ID {user_id} has been updated.")
-
-        updated_user = User.objects(id=user_id).first()
-        return user_schema.UserBase(**updated_user.to_mong().to_dict())
+        user_in_db = crud_user.update_user(user_id=user_id, user_data=user_data)
+        return user_in_db
 
     except ValidationError as e:
         logger.error(f"Validation Error: {e}")
